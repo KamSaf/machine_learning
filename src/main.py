@@ -60,4 +60,3 @@ if __name__ == "__main__":
     unique_values = get_unique_values(data)
     values_propabilities = get_values_propabilities(data, unique_values)
     print(get_class_entropy(values_propabilities))
-    pass
