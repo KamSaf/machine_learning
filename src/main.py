@@ -23,6 +23,23 @@ def get_unique_values(data: dict) -> dict:
     return {key: set(value) for key, value in data.items()}
 
 
+def get_unique_values_count(data: dict, unique_values: dict) -> dict:
+    return {
+        class_: {value: data[class_].count(value) for value in unique_values}
+        for class_, unique_values in unique_values.items()
+    }
+
+
+def get_values_propabilities(data: dict, unique_values: dict) -> dict:
+    return {
+        class_: {
+            value: round(data[class_].count(value) / float(len(data[class_])), 2)
+            for value in unique_values
+        }
+        for class_, unique_values in unique_values.items()
+    }
+
+
 def display_data(data: dict) -> None:
     print("".join(f"{key}: {value}\n" for key, value in data.items()))
 
@@ -31,9 +48,16 @@ def calc_entropy(propabilities: tuple) -> float:
     return -1 * sum([p * math.log2(p) for p in propabilities])
 
 
+def get_class_entropy(values_propabilities: dict) -> dict:
+    return {
+        class_: calc_entropy(tuple(values.values()))
+        for class_, values in values_propabilities.items()
+    }
+
+
 if __name__ == "__main__":
     data = read_data("../data/gielda.txt", ",")
-    display_data(data)
-    print("\n")
-    display_data(get_unique_values(data))
+    unique_values = get_unique_values(data)
+    values_propabilities = get_values_propabilities(data, unique_values)
+    print(get_class_entropy(values_propabilities))
     pass
