@@ -2,6 +2,9 @@ import math
 from typing import Iterable
 
 
+DECISION_COLUMN_SYMBOL = "d"
+
+
 def read_data(path: str, sep: str) -> dict:
     with open(path, "r") as file:
         data = {}
@@ -9,7 +12,7 @@ def read_data(path: str, sep: str) -> dict:
             if index == 0:
                 col_count = len(line.strip().split(sep))
                 data = {
-                    "d" if i == col_count - 1 else f"c{i + 1}": []
+                    DECISION_COLUMN_SYMBOL if i == col_count - 1 else f"c{i + 1}": []
                     for i in range(col_count)
                 }
             load_data(data, line.strip().split(sep))
@@ -18,7 +21,7 @@ def read_data(path: str, sep: str) -> dict:
 
 def load_data(data: dict, line: list) -> dict:
     for index, el in enumerate(line):
-        header = "d" if index == len(line) - 1 else f"c{index + 1}"
+        header = DECISION_COLUMN_SYMBOL if index == len(line) - 1 else f"c{index + 1}"
         data[header].append(el)
     return data
 
@@ -59,33 +62,46 @@ def get_class_entropy(values_propabilities: dict) -> dict:
     }
 
 
-def get_entropy_by_attribute(data: dict, attr: str) -> dict:
-    pass
-    # attr_unique_values = tuple(get_unique_values(data)[attr])
-    # print({attr_val: [r for r in data.items()] for attr_val in attr_unique_values})
-    # print(attr_unique_values)
-    return {}
-
-
-def split_dict(data: dict, split_vals: Iterable[str], col_name: str) -> dict | None:
-    print([i for i in range(0, len(data[col_name]), 1) if data[col_name][i] == "old"])
+def sort_dict(data: dict, split_vals: Iterable[str], col_name: str) -> dict:
     rows_indexes = {
-        key: [i for i in range(len(data[col_name])) if data[col_name][i] == key]
-        for key in split_vals
+        sv: [i for i in range(len(data[col_name])) if data[col_name][i] == sv]
+        for sv in split_vals
     }
-    print(rows_indexes)
     return {
         sv: {key: [value[i] for i in rows_indexes[sv]] for key, value in data.items()}
         for sv in split_vals
     }
 
 
+def get_rows_count(data: dict) -> int:
+    return len(data[DECISION_COLUMN_SYMBOL])
+
+
+def calc_info(data: dict, attr: str) -> float:
+    attr_unique_values = tuple(get_unique_values(data)[attr])
+    sorted_data = sort_dict(data, attr_unique_values, attr)
+    decision_columns = {
+        key: value[DECISION_COLUMN_SYMBOL] for key, value in sorted_data.items()
+    }
+    unique_values = get_unique_values(decision_columns)
+    values_propabilities = get_values_propabilities(decision_columns, unique_values)
+    entropies = get_class_entropy(values_propabilities)
+    rows_count = get_rows_count(data)
+    info = {
+        key: (len(value) / rows_count) * entropies[key]
+        for key, value in decision_columns.items()
+    }
+    return sum(list(info.values()))
+
+
 if __name__ == "__main__":
     data = read_data("../data/gielda.txt", ",")
-    print(data)
-    unique_values = get_unique_values(data)
-    values_propabilities = get_values_propabilities(data, unique_values)
-    print(get_class_entropy(values_propabilities))
-    get_entropy_by_attribute(data, "c1")
-    # print("\n")
-    # print(split_dict(data, ("old", "mid", "new"), "c1"))
+    values_propabilities = tuple(
+        get_values_propabilities(data, get_unique_values(data))[
+            DECISION_COLUMN_SYMBOL
+        ].values()
+    )
+    entropy = calc_entropy(values_propabilities)
+    c1_info = calc_info(data, "c1")
+    info_gain = entropy - c1_info
+    print(f"start entropy: {entropy}\nc1 info: {c1_info}\ninfo gain: {info_gain}")
