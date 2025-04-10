@@ -140,22 +140,31 @@ def calc_info(data: dict, attr: str) -> float:
     return sum(list(info.values()))
 
 
-def run_algorithm(data: dict, atr_name: str = "c1") -> tuple:
+def calc_col_entropy(data: dict, attr_name: str = DECISION_COLUMN_SYMBOL) -> float:
+    """
+    Returns entropy for given attribute
+    """
+    values_propabilities = tuple(
+        get_values_propabilities(data, get_unique_values(data))[attr_name].values()
+    )
+    return calc_entropy(values_propabilities)
+
+
+def run_algorithm(data: dict, attr_name: str = "c1") -> tuple:
     """
     Runs algorithm 👍
     """
-    values_propabilities = tuple(
-        get_values_propabilities(data, get_unique_values(data))[
-            DECISION_COLUMN_SYMBOL
-        ].values()
-    )
-    entropy = calc_entropy(values_propabilities)
-    atr_info = calc_info(data, atr_name)
-    info_gain = entropy - atr_info
-    return entropy, atr_info, info_gain
+    decision_col_entropy = calc_col_entropy(data)
+    attr_entropy = calc_col_entropy(data, attr_name)
+    attr_info = calc_info(data, attr_name)
+    info_gain = decision_col_entropy - attr_info
+    gain_ratio = info_gain / attr_entropy
+    return decision_col_entropy, attr_info, info_gain, gain_ratio
 
 
 if __name__ == "__main__":
     data = read_data("../data/gielda.txt")
-    entropy, attr_info, info_gain = run_algorithm(data, "c1")
-    print(f"start entropy: {entropy}\nc1 info: {attr_info}\ninfo gain: {info_gain}")
+    entropy, attr_info, info_gain, gain_ratio = run_algorithm(data, "c1")
+    print(
+        f"start entropy: {entropy}\nc1 info: {attr_info}\ninfo gain: {info_gain}\ngain ratio: {gain_ratio}"
+    )
