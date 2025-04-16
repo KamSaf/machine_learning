@@ -13,19 +13,18 @@ def read_data(path: str, sep: str = ",") -> dict:
         value - attribute values
     """
     with open(path, "r") as file:
-        data = {}
+        col_count = len(next(file).strip().split(sep))
+        file.seek(0)
+        data = {
+            DECISION_COLUMN_SYMBOL if i == col_count - 1 else f"c{i + 1}": []
+            for i in range(col_count)
+        }
         for index, line in enumerate(file):
-            if index == 0:
-                col_count = len(line.strip().split(sep))
-                data = {
-                    DECISION_COLUMN_SYMBOL if i == col_count - 1 else f"c{i + 1}": []
-                    for i in range(col_count)
-                }
-            load_data(data, line.strip().split(sep))
+            load_line(data, line.strip().split(sep))
     return data
 
 
-def load_data(data: dict, line: list) -> None:
+def load_line(data: dict, line: list) -> None:
     """
     Load row of data into data dictionary
     """
