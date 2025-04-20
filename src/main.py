@@ -33,6 +33,13 @@ def load_line(data: dict, line: list) -> None:
         data[header].append(el)
 
 
+def get_attr_names(data: dict) -> tuple[str]:
+    """
+    Returns names of all attributes in dataset
+    """
+    return tuple(data.keys())
+
+
 def get_unique_values(data: dict) -> dict:
     """
     Returns dictionary:
@@ -161,9 +168,20 @@ def run_algorithm(data: dict, attr_name: str = "c1") -> tuple:
     return decision_col_entropy, attr_info, info_gain, gain_ratio
 
 
+def build_tree(data: dict) -> str:
+    ratios = {attr: run_algorithm(data, attr)[3] for attr in get_attr_names(data)}
+    max_ratio_attr = list(ratios.keys())[0]
+    for attr, ratio in ratios.items():
+        max_ratio_attr = attr if ratio > ratios[max_ratio_attr] else max_ratio_attr
+    return max_ratio_attr
+
+
 if __name__ == "__main__":
     data = read_data("../data/gielda.txt")
-    entropy, attr_info, info_gain, gain_ratio = run_algorithm(data, "c1")
-    print(
-        f"start entropy: {entropy}\nc1 info: {attr_info}\ninfo gain: {info_gain}\ngain ratio: {gain_ratio}"
-    )
+    for attr in get_attr_names(data):
+        entropy, attr_info, info_gain, gain_ratio = run_algorithm(data, attr)
+        print(
+            f"Attribute: {attr}\nstart entropy: {entropy}\nc1 info: {attr_info}\ninfo gain: {info_gain}\ngain ratio: {gain_ratio}\n"
+        )
+    for attr in get_attr_names(data):
+        print(build_tree(data))
