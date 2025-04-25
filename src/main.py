@@ -4,6 +4,7 @@ from typing import Iterable
 
 DECISION_COLUMN_SYMBOL = "d"
 DATA_FILE_PATH = "../data/gielda.txt"
+OUTPUT_PATH = "../tree.txt"
 INDENT = "      "
 
 
@@ -213,6 +214,17 @@ def build_tree(
     return "".join(output)
 
 
+def save_tree(tree: str | None) -> None:
+    """
+    Saves textual tree visualisation to file
+    """
+    f = open(OUTPUT_PATH, "w")
+    if tree:
+        f.write(tree)
+    f.close()
+
+
 if __name__ == "__main__":
     tree = build_tree(data_path="../data/car.data")
+    save_tree(tree)
     print(tree)
