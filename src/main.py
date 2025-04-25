@@ -209,7 +209,7 @@ def build_tree(
     split_data = split_dict(data, get_unique_values(data)[attr], attr)
     for sd in split_data.values():
         if level != 0:
-            output.append(f"\n{level*INDENT}{sd[attr][0]}-> ")
+            output.append(f"\n{level*INDENT}{sd[attr][0]} -> ")
         build_tree(sd, level=level, output=output)
     return "".join(output)
 
