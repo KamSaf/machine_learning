@@ -3,6 +3,8 @@ from typing import Iterable
 
 
 DECISION_COLUMN_SYMBOL = "d"
+DATA_FILE_PATH = "../data/gielda.txt"
+INDENT = "      "
 
 
 def read_data(path: str, sep: str = ",") -> dict:
@@ -33,11 +35,11 @@ def load_line(data: dict, line: list) -> None:
         data[header].append(el)
 
 
-def get_attr_names(data: dict) -> tuple[str]:
+def get_attr_names(data: dict) -> list[str]:
     """
     Returns names of all attributes in dataset
     """
-    return tuple(data.keys())
+    return list(data.keys())
 
 
 def get_unique_values(data: dict) -> dict:
@@ -156,32 +158,130 @@ def calc_col_entropy(data: dict, attr_name: str = DECISION_COLUMN_SYMBOL) -> flo
     return calc_entropy(values_propabilities)
 
 
-def run_algorithm(data: dict, attr_name: str = "c1") -> tuple:
+def calc_gain_ratio(data: dict, attr_name: str) -> tuple:
     """
-    Runs algorithm 👍
+    Returns tuple containing:
+        [0] - entropy of the decision column
+        [1] - info for a chosen attribute
+        [2] - info gain for a chosen attribute
+        [3] - gain ratio for a chosen attribute
     """
     decision_col_entropy = calc_col_entropy(data)
     attr_entropy = calc_col_entropy(data, attr_name)
     attr_info = calc_info(data, attr_name)
     info_gain = decision_col_entropy - attr_info
-    gain_ratio = info_gain / attr_entropy
+    gain_ratio = info_gain / attr_entropy if attr_entropy != 0.0 else 0.0
     return decision_col_entropy, attr_info, info_gain, gain_ratio
 
 
-def build_tree(data: dict) -> str:
-    ratios = {attr: run_algorithm(data, attr)[3] for attr in get_attr_names(data)}
+def get_max_ratio_attr(data: dict) -> tuple[str, float]:
+    """
+    Returns attribute name with highest info gain ratio
+    in given dataset
+    """
+    ratios = {
+        attr: calc_gain_ratio(data, attr)[3] for attr in get_attr_names(data)[:-1]
+    }
     max_ratio_attr = list(ratios.keys())[0]
     for attr, ratio in ratios.items():
         max_ratio_attr = attr if ratio > ratios[max_ratio_attr] else max_ratio_attr
-    return max_ratio_attr
+    return max_ratio_attr, ratios[max_ratio_attr]
+
+
+# def display_tree_level(tree_level_data: tuple, level: int, attr: str) -> None:
+#     attr, entropy, attr_info, info_gain, gain_ratio = tree_level_data
+#     print(
+#         "$Attribute: {0}\n$start entropy: {1}\n${2} info: {3}\n$info gain: {4}\n$gain ratio: {5}\n".format(
+#             attr, entropy, attr, attr_info, info_gain, gain_ratio
+#         ).replace(
+#             "$", (level - 1) * INDENT
+#         )
+#     )
+
+
+# def build_tree(
+#     data: dict | None = None, data_path: str = DATA_FILE_PATH, level: int = 0
+# ) -> None:
+#     """
+#     Runs algorithm 👍
+#     """
+#     level += 1
+#     if not data:
+#         data = read_data(data_path)
+
+#     attr, ratio = get_max_ratio_attr(data)
+#     if abs(ratio) == 0:
+#         return
+#     split_data = split_dict(data, get_unique_values(data)[attr], attr)
+#     for sd in split_data.values():
+#         entropy, attr_info, info_gain, gain_ratio = calc_gain_ratio(data, attr)
+#         print(
+#             "$Attribute: {0}\n$start entropy: {1}\n${2} info: {3}\n$info gain: {4}\n$gain ratio: {5}\n".format(
+#                 attr, entropy, attr, attr_info, info_gain, gain_ratio
+#             ).replace(
+#                 "$", (level - 1) * INDENT
+#             )
+#         )
+#         build_tree(sd, level=level)
+
+
+# def build_tree(
+#     data: dict | None = None, data_path: str = DATA_FILE_PATH, level: int = 0
+# ) -> None:
+#     """
+#     Runs algorithm 👍
+#     """
+#     if not data:
+#         data = read_data(data_path)
+
+#     attr, ratio = get_max_ratio_attr(data)
+#     if level == 0:
+#         print(f"Atrybut: {attr[1]}")
+#     level += 1
+
+#     if abs(ratio) == 0:
+#         return
+#     split_data = split_dict(data, get_unique_values(data)[attr], attr)
+#     for sd in split_data.values():
+#         if level != 0:
+#             print(f"{level*INDENT}{sd[attr][0]}->Atrybut:{attr[1]}")
+# entropy, attr_info, info_gain, gain_ratio = calc_gain_ratio(data, attr)
+
+#         build_tree(sd, level=level)
+
+
+def build_tree(
+    data: dict | None = None,
+    data_path: str = DATA_FILE_PATH,
+    level: int = 0,
+    output: list = [],
+) -> str | None:
+    """
+    Runs algorithm 👍
+    """
+    if not data:
+        data = read_data(data_path)
+    attr, ratio = get_max_ratio_attr(data)
+    if abs(ratio) == 0:
+        output.append(f"D: {tuple(set(data[DECISION_COLUMN_SYMBOL]))[0]}")
+        return
+
+    if level == 0:
+        output.append(f"Atrybut: {attr[1]}")
+    else:
+        output.append(f"Atrybut: {attr[1]}")
+
+    level += 1
+
+    split_data = split_dict(data, get_unique_values(data)[attr], attr)
+    for sd in split_data.values():
+        if level != 0:
+            output.append(f"\n{level*INDENT}{sd[attr][0]}-> ")
+        build_tree(sd, level=level, output=output)
+    return "".join(output)
 
 
 if __name__ == "__main__":
-    data = read_data("../data/gielda.txt")
-    for attr in get_attr_names(data):
-        entropy, attr_info, info_gain, gain_ratio = run_algorithm(data, attr)
-        print(
-            f"Attribute: {attr}\nstart entropy: {entropy}\nc1 info: {attr_info}\ninfo gain: {info_gain}\ngain ratio: {gain_ratio}\n"
-        )
-    for attr in get_attr_names(data):
-        print(build_tree(data))
+    level = 0
+    tree = build_tree(data_path="../data/car.data", level=level)
+    print(tree)
