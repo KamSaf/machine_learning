@@ -1,4 +1,5 @@
 from uuid import uuid1, UUID
+from config import INDENT
 
 
 class Node:
@@ -49,7 +50,7 @@ class Node:
         return depth + max_children_depth
 
     def to_string(self, indent: int = 0) -> str:
-        ind = "   " * indent
+        ind = INDENT * indent
         output = []
         output.append(f"\n{ind}ID: {self.id}")
         output.append(f"{ind}Label: {self.label}")
