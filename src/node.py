@@ -5,7 +5,7 @@ from config import INDENT
 class Node:
     def __assign_parent(self) -> None:
         """
-        Recursive function assigning parent identificator
+        Recursive method assigning parent identificator
         to nodes children.
         """
         if len(self.children) == 0:
@@ -30,7 +30,7 @@ class Node:
 
     def get_child_by_id(self, id: UUID) -> "Node | None":
         """
-        Function retrieving child of a node by ID.
+        Method retrieving child of a node by ID.
 
         Parameters:
             id (UUID): ID of a node to look for
@@ -45,7 +45,7 @@ class Node:
 
     def get_child_by_value(self, val: str) -> "Node | None":
         """
-        Function retrieving child of a node by value.
+        Method retrieving child of a node by value.
 
         Parameters:
             val (str): value of a node to look for
@@ -58,7 +58,7 @@ class Node:
 
     def append_child(self, child: "Node") -> None:
         """
-        Function adding node to children list.
+        Method adding node to children list.
 
         Parameters:
            child (Node): node to be appended
@@ -67,7 +67,7 @@ class Node:
 
     def get_children_vals(self) -> tuple[str | None, ...]:
         """
-        Function retrieving values of nodes children.
+        Method retrieving values of nodes children.
 
         Returns:
             val_list (tuple[str | None, ...]): list of children values
@@ -76,7 +76,7 @@ class Node:
 
     def get_depth(self, first_step: bool = True) -> int:
         """
-        Recursive function calculating depth of tree, where self is its root.
+        Recursive method calculating depth of tree, where self is its root.
 
         Parameters:
             first_step (bool): flag marking first iteration (don't change)
@@ -93,7 +93,7 @@ class Node:
 
     def to_string(self, indent: int = 0) -> str:
         """
-        Recursive function converting node data to string.
+        Recursive method converting node data to string.
 
         Parameters:
             indent (int): indentation level (node depth)
