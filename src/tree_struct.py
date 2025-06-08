@@ -5,6 +5,10 @@ from config import INDENT
 class Node:
 
     def __assign_parent(self) -> None:
+        """
+        Recursive function assigning parent identificator
+        to nodes children.
+        """
         if len(self.children) == 0:
             return
         for c in self.children:
@@ -26,22 +30,61 @@ class Node:
         self.__assign_parent()
 
     def get_child_by_id(self, id: UUID) -> "Node | None":
+        """
+        Function retrieving child of a node by ID.
+
+        Parameters:
+            id (UUID): ID of a node to look for
+
+        Returns:
+            node (Node | None): retrieved node
+        """
         if self.id == id:
             return self
         target = list(filter(lambda node: node.id == id, self.children))
         return target[0] if len(target) else None
 
     def get_child_by_value(self, val: str) -> "Node | None":
+        """
+        Function retrieving child of a node by value.
+
+        Parameters:
+            val (str): value of a node to look for
+
+        Returns:
+            node (Node | None): retrieved node
+        """
         target = list(filter(lambda node: node.val == val, self.children))
         return target[0] if len(target) else None
 
     def append_child(self, child: "Node") -> None:
+        """
+        Function adding node to children list.
+
+        Parameters:
+           child (Node): node to be appended
+        """
         self.children.append(child)
 
     def get_children_vals(self) -> tuple[str | None, ...]:
+        """
+        Function retrieving values of nodes children.
+
+        Returns:
+            val_list (tuple[str | None, ...]): list of children values
+        """
         return tuple(map(lambda node: node.val, self.children))
 
     def get_depth(self, first_step: bool = True) -> int:
+        """
+        Recursive function calculating depth of tree, where self is its root.
+
+        Parameters:
+            first_step (bool): flag marking first iteration (don't change)
+
+        Returns:
+            tree_depth (int): depth of tree
+        """
         depth = 0 if first_step else 1
         depth_of_children = (
             [c.get_depth(False) for c in self.children] if len(self.children) else []
@@ -50,6 +93,15 @@ class Node:
         return depth + max_children_depth
 
     def to_string(self, indent: int = 0) -> str:
+        """
+        Recursive function converting node data to string.
+
+        Parameters:
+            indent (int): indentation level (node depth)
+
+        Returns:
+            text (str): node data as string
+        """
         ind = INDENT * indent
         output = []
         output.append(f"\n{ind}ID: {self.id}")
