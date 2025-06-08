@@ -3,7 +3,6 @@ from config import INDENT
 
 
 class Node:
-
     def __assign_parent(self) -> None:
         """
         Recursive function assigning parent identificator

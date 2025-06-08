@@ -1,4 +1,4 @@
-from tree_struct import Node
+from node import Node
 from config import DECISION_COLUMN_SYMBOL, DATA_FILE_PATH, INDENT
 from utils import (
     read_data,
