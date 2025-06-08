@@ -16,7 +16,19 @@ def build_tree(
     output: list = [],
 ) -> str | None:
     """
-    Runs algorithm in text variant 👍
+    Function building text decision tree visualisation.
+
+    Parameters:
+        data: (dict | None): data in form of a dictionary (key - attribute, value - column content)
+
+        data_path (str): path to dataset file
+
+        level (int): level of indentation
+
+        output (list): list containing output of visualisation
+
+    Returns:
+        tree (str | None): tree visualisation in text form
     """
     if not data:
         data = read_data(data_path)
@@ -40,7 +52,16 @@ def build_tree_struct(
     data_path: str = DATA_FILE_PATH,
 ) -> Node | None:
     """
-    Runs algorithm in tree structure variant 👍
+    Function building decision tree structure.
+
+    Parameters:
+        root: (Node | None): root from which tree will be built
+
+        data_path (str): path to dataset file
+
+        data_path (str): path to dataset file
+    Returns:
+        tree (Node | None): decision tree
     """
     if "DECISION" in root.label:
         return
