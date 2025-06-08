@@ -7,7 +7,7 @@ class Node:
         if len(self.children) == 0:
             return
         for c in self.children:
-            c.parent = self
+            c.parent_id = self.id
             c.__assign_parent()
 
     def __init__(
@@ -15,13 +15,14 @@ class Node:
         label: str,
         children: list["Node"] | None = None,
         val: str | None = None,
+        parent_id: UUID | None = None,
     ):
         self.id = uuid1()
         self.label = label
         self.val = val
-        self.parent = None
+        self.parent_id = parent_id
         self.children = [] if children is None else children
-        # self.__assign_parent()
+        self.__assign_parent()
 
     def get_child_by_id(self, id: UUID) -> "Node | None":
         if self.id == id:
@@ -53,7 +54,7 @@ class Node:
         output.append(f"\n{ind}ID: {self.id}")
         output.append(f"{ind}Label: {self.label}")
         output.append(f"{ind}Value: {self.val}")
-        output.append(f"{ind}Parent: {self.parent.id if self.parent else None}")
+        output.append(f"{ind}Parent: {self.parent_id if self.parent_id else None}")
         if self.children:
             output.append(f"{ind}Children:")
             for child in self.children:
@@ -77,28 +78,3 @@ if __name__ == "__main__":
 
     print(tree)
     print(tree.get_depth())
-
-    # def func(self, indent: int = 0) -> str:
-    #     ind = "   " * indent
-    #     output = []
-    #     output.append(f"\n{ind}ID: {self.id}")
-    #     output.append(f"{ind}Label: {self.label}")
-    #     output.append(f"{ind}Value: {self.val}")
-    #     return "\n".join(output)
-
-    # def to_string(self, indent: int = 0) -> str:
-    #     ind = "   " * indent
-    #     output = []
-    #     output.append(f"\n{ind}ID: {self.id}")
-    #     output.append(f"{ind}Label: {self.label}")
-    #     output.append(f"{ind}Value: {self.val}")
-    #     # output.append(f"{ind}Parent: {self.parent.id if self.parent else None}")
-    #     if self.children:
-    #         output.append(f"{ind}Children:")
-    #         for child in self.children:
-    #             output.append(child.dupa(indent + 1))
-    #         output.append("\n")
-    #     return "\n".join(output)
-
-    # def __str__(self) -> str:
-    #     return self.to_string()

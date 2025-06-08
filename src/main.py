@@ -1,6 +1,6 @@
 import math
 from typing import Iterable
-
+from tree_struct import Node
 
 DECISION_COLUMN_SYMBOL = "d"
 DATA_FILE_PATH = "../data/gielda.txt"
@@ -196,7 +196,7 @@ def build_tree(
     output: list = [],
 ) -> str | None:
     """
-    Runs algorithm 👍
+    Runs algorithm in text variant 👍
     """
     if not data:
         data = read_data(data_path)
@@ -214,6 +214,39 @@ def build_tree(
     return "".join(output)
 
 
+def build_tree_struct(
+    root: Node = Node("node"),
+    data: dict | None = None,
+    data_path: str = DATA_FILE_PATH,
+) -> Node | None:
+    """
+    Runs algorithm in tree structure variant 👍
+    """
+    if "DECISION" in root.label:
+        return
+    if not data:
+        data = read_data(data_path)
+    attr, ratio = get_max_ratio_attr(data)
+    if abs(ratio) == 0:
+        root.append_child(
+            Node(f"DECISION: {tuple(set(data[DECISION_COLUMN_SYMBOL]))[0]}")
+        )
+        return
+    root.label = attr
+    split_data = split_dict(data, get_unique_values(data)[attr], attr)
+    for sd in split_data.values():
+        decision_column_values = tuple(get_unique_values(sd)[DECISION_COLUMN_SYMBOL])
+        label = (
+            f"DECISION: {decision_column_values[0]}"
+            if len(decision_column_values) == 1
+            else "node"
+        )
+        new_node = Node(label=label, val=f"{sd[attr][0]}", parent_id=root.id)
+        root.append_child(new_node)
+        build_tree_struct(new_node, sd)
+    return root
+
+
 def save_tree(tree: str | None) -> None:
     """
     Saves textual tree visualisation to file
@@ -225,6 +258,10 @@ def save_tree(tree: str | None) -> None:
 
 
 if __name__ == "__main__":
-    tree = build_tree(data_path="../data/car.data")
-    save_tree(tree)
-    print(tree)
+    # Text variant
+    # tree = build_tree(data_path="../data/gielda.txt")
+    # save_tree(tree)
+    # print(tree)
+
+    root = build_tree_struct(data_path="../data/gielda.txt")
+    print(root)
