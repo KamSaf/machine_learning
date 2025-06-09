@@ -131,7 +131,8 @@ def calc_entropy(propabilities: tuple[float, ...]) -> float:
     Return:
         entropy (float): calculated entropy
     """
-    return -1 * sum([p * math.log2(p) for p in propabilities])
+    filtered_propabilities = (p for p in propabilities if p != 0)
+    return -1 * sum([p * math.log2(p) for p in filtered_propabilities])
 
 
 def get_class_entropy(values_propabilities: dict[str, dict[str, float]]) -> dict:
@@ -315,21 +316,28 @@ def get_max_key(
     return max_key, max_val
 
 
-def get_data_rows(data: dict[str, list[str]], n: int = 1) -> dict[str, list[str]]:
+def get_data_rows(
+    data: dict[str, list[str]], start: int = 0, stop: int = 1
+) -> dict[str, list[str]]:
     """
     Function getting rows from dataset (from 0 to n).
 
     Parameters:
         data (dict[str, list[str]]): dataset as dictionary
 
-        n (int): number of rows to get
+        start (int): subset start index
+
+        stop (int): subset stop index
 
     Returns:
         rows (dict[str, list[str]]): rows separated from dataset
     """
-    if n > len(data[DECISION_COLUMN_SYMBOL]):
+    ds_length = len(data[DECISION_COLUMN_SYMBOL])
+    if start < 0 or stop < 0:
+        raise Exception("Start and stop cannot be smaller than 0")
+    if start > ds_length or stop > ds_length:
         raise Exception("Not enough rows in dataset")
-    return {key: value[:n] for key, value in data.items()}
+    return {key: value[start:stop] for key, value in data.items()}
 
 
 def get_data_row(data: dict[str, list[str]], index: int) -> dict[str, list[str]]:
@@ -344,6 +352,8 @@ def get_data_row(data: dict[str, list[str]], index: int) -> dict[str, list[str]]
     Returns:
         row (dict[str, list[str]]): row separated from dataset
     """
+    if index < 0:
+        raise Exception("Start and stop cannot be smaller than 0")
     if index > len(data[DECISION_COLUMN_SYMBOL]):
         raise Exception("Index not in dataset")
     return {key: value[index : index + 1] for key, value in data.items()}

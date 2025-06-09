@@ -6,6 +6,8 @@ from utils import (
     split_dict,
     get_unique_values,
     get_max_key,
+    get_data_rows,
+    get_data_row,
 )
 
 
@@ -224,7 +226,6 @@ class Node:
             and "DECISION" in max_stat[0]
             and max_stat[1] / float(sum(labels.values())) >= PRUNE_THRESHOLD
         ):
-            # print("PRUNE: ", self.id, max_stat[1])
             self.label = max_stat[0]
             self.children.clear()
         return self.label
@@ -246,11 +247,34 @@ class Node:
         if not next_step:
             return None
         new_ds = data_row.copy()
-        new_ds.pop(self.label)
-        return next_step.predict(new_ds)
+        pred = next_step.predict(new_ds)
+        return pred.split(" ")[1] if pred and "DECISION" in pred else pred
 
-    def train_and_test(self):
-        pass
+    def train_and_test(self, dataset, ratio=0.3):
+        dataset_len = len(dataset[DECISION_COLUMN_SYMBOL])
+        split_index = int(dataset_len * ratio)
+        train_ds = get_data_rows(dataset, stop=split_index)
+        test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
+        Node.build_tree_struct(self, train_ds)
+        test_ds_by_row = [
+            get_data_row(test_ds, i)
+            for i in range(len(test_ds[DECISION_COLUMN_SYMBOL]))
+        ]
+        results = {dec: [0, 0, 0, 0] for dec in set(dataset[DECISION_COLUMN_SYMBOL])}
+        for row in test_ds_by_row:
+            actual = row[DECISION_COLUMN_SYMBOL][0]
+            pred = self.predict(row)
+            for class_ in results.keys():
+                if class_ == actual and pred == class_:
+                    results[class_][0] += 1  # TP
+                elif actual != class_ and pred == class_:
+                    results[class_][1] += 1  # FP
+                elif actual == class_ and pred != class_:
+                    results[class_][2] += 1  # FN
+                elif actual != class_ and pred != class_:
+                    if class_ != pred and class_ != actual:
+                        results[class_][3] += 1  # TN
+        return results
 
     def cross_val(self):
         pass

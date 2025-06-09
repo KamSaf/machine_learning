@@ -10,11 +10,14 @@ if __name__ == "__main__":
     # save_tree(tree)
 
     # Structure variant
-    data = read_data("../data/car.data")
+    data = read_data("../data/breast-cancer.data")
     root = Node.build_tree_struct(data=data)
-    if root:
-        print(root.predict(get_data_row(data, 1093)))
-    # save_tree(str(root))
+    if not root:
+        exit()
+        # print(root.predict(get_data_row(data, 1093)))
+    root.prune()
+    save_tree(str(root))
+    print(root.train_and_test(data))
 
     # data = read_data(DATA_FILE_PATH)
     # print(get_data_rows(data, 1))
