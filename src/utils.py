@@ -1,6 +1,24 @@
+from random import shuffle
 import math
 from typing import Iterable
 from config import DECISION_COLUMN_SYMBOL, OUTPUT_PATH
+
+
+def randomize_data(path: str, output_path: str) -> None:
+    """
+    Function randomizing data file and saving it to new file.
+
+    Parameters:
+        path (str): path to dataset file
+
+        output_path (str): path to file where randomized data is to be saved
+    """
+    with open(path, "r") as read_file:
+        file = [line for line in read_file]
+    shuffle(file)
+    with open(output_path, "w") as save_file:
+        for line in file:
+            save_file.write(line)
 
 
 def read_data(path: str, sep: str = ",") -> dict[str, list[str]]:
@@ -357,3 +375,26 @@ def get_data_row(data: dict[str, list[str]], index: int) -> dict[str, list[str]]
     if index > len(data[DECISION_COLUMN_SYMBOL]):
         raise Exception("Index not in dataset")
     return {key: value[index : index + 1] for key, value in data.items()}
+
+
+def evaluate(stats: dict[str, list[int]]) -> list[str]:
+    """
+    Function calculating average classification quality metrics from test statistics.
+
+    Parameters:
+        stats (dict[str, list[int]]): decision tree test statistics
+
+    Returns:
+        metrics (list[str]): list of average classification metrics as strings
+    """
+    accuracy_sum = 0
+    recall_sum = 0
+    precision_sum = 0
+    for _, res in stats.items():
+        accuracy_sum += (res[0] + res[3]) / float(sum(res))
+        recall_sum += res[0] / float(res[0] + res[2])
+        precision_sum += res[0] / float(res[0] + res[1])
+    return [
+        str(round(stat / float(len(stats.keys())) * 100, 2))
+        for stat in (accuracy_sum, recall_sum, precision_sum)
+    ]

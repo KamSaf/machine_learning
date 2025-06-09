@@ -1,23 +1,14 @@
 from node import Node
-from utils import save_tree, read_data, get_data_row
-from config import DATA_FILE_PATH, DECISION_COLUMN_SYMBOL
+from utils import read_data, randomize_data, evaluate
 
 
 if __name__ == "__main__":
-    # Text variant
-    # tree = Node.visualise(data_path="../data/car.data")
-    # print(tree)
-    # save_tree(tree)
-
-    # Structure variant
-    data = read_data("../data/breast-cancer.data")
-    root = Node.build_tree_struct(data=data)
-    if not root:
-        exit()
-        # print(root.predict(get_data_row(data, 1093)))
-    root.prune()
-    save_tree(str(root))
-    print(root.train_and_test(data))
-
-    # data = read_data(DATA_FILE_PATH)
-    # print(get_data_rows(data, 1))
+    path = "../data/car.data"
+    # path = "../data/breast-cancer.data"
+    randomize_data(path, "random_data.data")
+    data = read_data("random_data.data")
+    root = Node()
+    results = evaluate(root.train_and_test(data))
+    print(
+        f"Results {path.split('/')[-1]}:\nAccuracy: {results[0]}%\nRecall: {results[1]}%\nPrecision: {results[2]}%"
+    )

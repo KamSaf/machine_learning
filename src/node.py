@@ -250,12 +250,13 @@ class Node:
         pred = next_step.predict(new_ds)
         return pred.split(" ")[1] if pred and "DECISION" in pred else pred
 
-    def train_and_test(self, dataset, ratio=0.3):
+    def train_and_test(self, dataset, ratio=0.3) -> dict[str, list[int]]:
         dataset_len = len(dataset[DECISION_COLUMN_SYMBOL])
         split_index = int(dataset_len * ratio)
         train_ds = get_data_rows(dataset, stop=split_index)
         test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
         Node.build_tree_struct(self, train_ds)
+        self.prune()
         test_ds_by_row = [
             get_data_row(test_ds, i)
             for i in range(len(test_ds[DECISION_COLUMN_SYMBOL]))
@@ -275,12 +276,6 @@ class Node:
                     if class_ != pred and class_ != actual:
                         results[class_][3] += 1  # TN
         return results
-
-    def cross_val(self):
-        pass
-
-    def evaluate(self):
-        pass
 
 
 if __name__ == "__main__":
