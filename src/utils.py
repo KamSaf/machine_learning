@@ -281,14 +281,35 @@ def get_max_ratio_attr(data: dict[str, list[str]]) -> tuple[str, float]:
     return max_ratio_attr, ratios[max_ratio_attr]
 
 
-def save_tree(tree: str | None) -> None:
+def save_tree(tree: str | None, path: str = OUTPUT_PATH) -> None:
     """
     Saves textual tree visualisation to a .txt file.
 
     Parameters:
         tree (str | None): string containing tree representation.
     """
-    f = open(OUTPUT_PATH, "w")
+    f = open(path, "w")
     if tree:
         f.write(tree)
     f.close()
+
+
+def get_max_key(
+    vals_dict: dict[str, int],
+) -> tuple[str, int]:
+    """
+    Function finding key with max value in dictionary.
+
+    Params:
+        vals_dict (dict[str | None, int]): dictionary to be searched
+
+    Returns:
+        max_key (tuple[str | None, int | float] | None): key with maximum value, None if no definite winner
+    """
+    max_val = 0
+    max_key = ""
+    for key, val in vals_dict.items():
+        if val > max_val:
+            max_key = key
+            max_val = val
+    return max_key, max_val

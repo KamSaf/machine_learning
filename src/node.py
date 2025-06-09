@@ -1,33 +1,12 @@
-from math import inf
 from uuid import uuid1, UUID
-from config import DECISION_COLUMN_SYMBOL, DATA_FILE_PATH, INDENT
+from config import DECISION_COLUMN_SYMBOL, DATA_FILE_PATH, INDENT, PRUNE_THRESHOLD
 from utils import (
     read_data,
     get_max_ratio_attr,
     split_dict,
     get_unique_values,
+    get_max_key,
 )
-
-
-def get_max_key(vals_dict: dict[str | None, int]) -> str | None:
-    """
-    Function finding key with max value in dictionary.
-
-    Params:
-        vals_dict (dict[str | None, int]): dictionary to be searched
-
-    Returns:
-        max_key (str | None): key with maximum value, None if no definite winner
-    """
-    max_val = -inf
-    max_key = ""
-    for key, val in vals_dict.items():
-        if val == max_val:
-            return None
-        if val > max_val:
-            max_key = key
-            max_val = val
-    return max_key
 
 
 class Node:
@@ -228,23 +207,28 @@ class Node:
             Node.build_tree_struct(new_node, sd)
         return root
 
-    def prune(self) -> None | str:
+    def prune(self) -> str:
         """
         Recursive method pruning decision tree.
 
         Returns:
-            node_label (str): only in recursive calls
+            node_label (str): node label
         """
         if not self.children:
             return self.label
-        children_labels = list(
-            filter(lambda lab: lab is not None, [c.prune() for c in self.children])
-        )
+        children_labels = [c.prune() for c in self.children]
+
         labels = {lab: children_labels.count(lab) for lab in set(children_labels)}
-        max_key = get_max_key(labels)
-        if max_key:
-            self.label = max_key
+        max_stat = get_max_key(labels)
+        if (
+            max_stat
+            and "DECISION" in max_stat[0]
+            and max_stat[1] / float(sum(labels.values())) >= PRUNE_THRESHOLD
+        ):
+            # print("PRUNE: ", self.id, max_stat[1])
+            self.label = max_stat[0]
             self.children.clear()
+        return self.label
 
     def predict(self):
         pass
