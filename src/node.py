@@ -1,5 +1,11 @@
 from uuid import uuid1, UUID
-from config import DECISION_COLUMN_SYMBOL, DATA_FILE_PATH, INDENT, PRUNE_THRESHOLD
+from config import (
+    DECISION_COLUMN_SYMBOL,
+    DATA_FILE_PATH,
+    INDENT,
+    PRUNE_THRESHOLD,
+    TEST_DATA_RATIO,
+)
 from utils import (
     read_data,
     get_max_ratio_attr,
@@ -8,6 +14,7 @@ from utils import (
     get_max_key,
     get_data_rows,
     get_data_row,
+    split_dict,
 )
 
 
@@ -27,7 +34,7 @@ class Node:
         self,
         label: str = "node",
         children: list["Node"] | None = None,
-        val: str | None = None,
+        val: str = "None",
         parent_id: UUID | None = None,
     ):
         self.id = uuid1()
@@ -230,6 +237,59 @@ class Node:
             self.children.clear()
         return self.label
 
+    def test_subtree(self, data):
+        data_by_row = [
+            get_data_row(data, i) for i in range(len(data[DECISION_COLUMN_SYMBOL]))
+        ]
+        result = 0
+        for row in data_by_row:
+            actual = row[DECISION_COLUMN_SYMBOL][0]
+            pred = self.predict(row)
+            if pred == actual:
+                result += 1
+        return result / float(len(data_by_row))
+
+    def prunev2(self, v_dataset, level=0) -> str:
+        """
+        Recursive method pruning decision tree.
+
+        Returns:
+            node_label (str): node label
+        """
+        if not self.children:
+            return self.label
+        print(get_unique_values(v_dataset))
+        print(self.label, self.val)
+        new_ds = (
+            split_dict(v_dataset, get_unique_values(v_dataset)[self.val], self.label)
+            if level > 0
+            else v_dataset
+        )
+        children_labels = [
+            c.prunev2(
+                new_ds,
+                level + 1,
+            )
+            for c in self.children
+        ]
+
+        labels = {lab: children_labels.count(lab) for lab in set(children_labels)}
+        max_label = get_max_key(labels)
+        subtree = self.copy()
+        subtree_result = subtree.test_subtree(v_dataset)
+        subtree.label = max_label[0]
+        leaf_result = subtree.test_subtree(v_dataset)
+
+        if (
+            max_label
+            and "DECISION" in max_label[0]
+            and subtree_result < leaf_result
+            and max_label[1] / float(sum(labels.values())) >= PRUNE_THRESHOLD
+        ):
+            self.label = max_label[0]
+            self.children.clear()
+        return self.label
+
     def predict(self, data_row: dict[str, list[str]]) -> str | None:
         """
         Recursive function predicting decision with decision tree.
@@ -250,13 +310,19 @@ class Node:
         pred = next_step.predict(new_ds)
         return pred.split(" ")[1] if pred and "DECISION" in pred else pred
 
-    def train_and_test(self, dataset, ratio=0.3) -> dict[str, list[int]]:
+    def train_and_test(
+        self, dataset: dict[str, list[str]], ratio: float = TEST_DATA_RATIO
+    ) -> dict[str, list[int]]:
         dataset_len = len(dataset[DECISION_COLUMN_SYMBOL])
         split_index = int(dataset_len * ratio)
         train_ds = get_data_rows(dataset, stop=split_index)
         test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
-        Node.build_tree_struct(self, train_ds)
-        self.prune()
+        # self.prune()
+        idx = int(len(train_ds[DECISION_COLUMN_SYMBOL]) * 0.1)
+        new_train_ds = get_data_rows(train_ds, 0, idx)
+        Node.build_tree_struct(self, new_train_ds)
+        v_dataset = get_data_rows(train_ds, idx, len(train_ds[DECISION_COLUMN_SYMBOL]))
+        self.prunev2(v_dataset)
         test_ds_by_row = [
             get_data_row(test_ds, i)
             for i in range(len(test_ds[DECISION_COLUMN_SYMBOL]))
@@ -276,6 +342,35 @@ class Node:
                     if class_ != pred and class_ != actual:
                         results[class_][3] += 1  # TN
         return results
+
+    # def train_and_test(
+    #     self, dataset: dict[str, list[str]], ratio: float = TEST_DATA_RATIO
+    # ) -> dict[str, list[int]]:
+    #     dataset_len = len(dataset[DECISION_COLUMN_SYMBOL])
+    #     split_index = int(dataset_len * ratio)
+    #     train_ds = get_data_rows(dataset, stop=split_index)
+    #     test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
+    #     Node.build_tree_struct(self, train_ds)
+    #     self.prune()
+    #     test_ds_by_row = [
+    #         get_data_row(test_ds, i)
+    #         for i in range(len(test_ds[DECISION_COLUMN_SYMBOL]))
+    #     ]
+    #     results = {dec: [0, 0, 0, 0] for dec in set(dataset[DECISION_COLUMN_SYMBOL])}
+    #     for row in test_ds_by_row:
+    #         actual = row[DECISION_COLUMN_SYMBOL][0]
+    #         pred = self.predict(row)
+    #         for class_ in results.keys():
+    #             if class_ == actual and pred == class_:
+    #                 results[class_][0] += 1  # TP
+    #             elif actual != class_ and pred == class_:
+    #                 results[class_][1] += 1  # FP
+    #             elif actual == class_ and pred != class_:
+    #                 results[class_][2] += 1  # FN
+    #             elif actual != class_ and pred != class_:
+    #                 if class_ != pred and class_ != actual:
+    #                     results[class_][3] += 1  # TN
+    #     return results
 
 
 if __name__ == "__main__":

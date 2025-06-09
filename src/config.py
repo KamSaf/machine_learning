@@ -3,3 +3,4 @@ DATA_FILE_PATH = "../data/gielda.txt"
 OUTPUT_PATH = "../tree.txt"
 INDENT = "      "
 PRUNE_THRESHOLD = 0.75
+TEST_DATA_RATIO = 0.3
