@@ -313,3 +313,37 @@ def get_max_key(
             max_key = key
             max_val = val
     return max_key, max_val
+
+
+def get_data_rows(data: dict[str, list[str]], n: int = 1) -> dict[str, list[str]]:
+    """
+    Function getting rows from dataset (from 0 to n).
+
+    Parameters:
+        data (dict[str, list[str]]): dataset as dictionary
+
+        n (int): number of rows to get
+
+    Returns:
+        rows (dict[str, list[str]]): rows separated from dataset
+    """
+    if n > len(data[DECISION_COLUMN_SYMBOL]):
+        raise Exception("Not enough rows in dataset")
+    return {key: value[:n] for key, value in data.items()}
+
+
+def get_data_row(data: dict[str, list[str]], index: int) -> dict[str, list[str]]:
+    """
+    Function getting single row from dataset at specified index.
+
+    Parameters:
+        data (dict[str, list[str]]): dataset as dictionary
+
+        index (int): index of row to get
+
+    Returns:
+        row (dict[str, list[str]]): row separated from dataset
+    """
+    if index > len(data[DECISION_COLUMN_SYMBOL]):
+        raise Exception("Index not in dataset")
+    return {key: value[index : index + 1] for key, value in data.items()}

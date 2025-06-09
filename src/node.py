@@ -60,7 +60,7 @@ class Node:
         Returns:
             node (Node | None): retrieved node
         """
-        target = list(filter(lambda node: node.val == val, self.children))
+        target = [c for c in self.children if c.val == val]
         return target[0] if len(target) else None
 
     def append_child(self, child: "Node") -> None:
@@ -175,7 +175,6 @@ class Node:
 
             data_path (str): path to dataset file
 
-            data_path (str): path to dataset file
         Returns:
             tree (Node | None): decision tree
         """
@@ -230,8 +229,25 @@ class Node:
             self.children.clear()
         return self.label
 
-    def predict(self):
-        pass
+    def predict(self, data_row: dict[str, list[str]]) -> str | None:
+        """
+        Recursive function predicting decision with decision tree.
+
+        Parameters:
+            data_row (dict[str, list[str]]): single row from dataset
+
+        Returns:
+            decision (str): decision made with decision tree
+        """
+        if "DECISION" in self.label:
+            return self.label
+        val = data_row[self.label][0]
+        next_step = self.get_child_by_value(val)
+        if not next_step:
+            return None
+        new_ds = data_row.copy()
+        new_ds.pop(self.label)
+        return next_step.predict(new_ds)
 
     def train_and_test(self):
         pass
