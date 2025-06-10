@@ -194,7 +194,7 @@ class Node:
         if not data:
             data = read_data(data_path)
         attr, ratio = get_max_ratio_attr(data)
-        if abs(ratio) == 0 or abs(ratio) < 0.05:
+        if abs(ratio) == 0:
             root.label = (
                 f"DECISION: {tuple(sorted(set(data[DECISION_COLUMN_SYMBOL])))[0]}"
             )
