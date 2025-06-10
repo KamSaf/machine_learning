@@ -1,3 +1,4 @@
+from math import sqrt
 from uuid import uuid1, UUID
 from config import (
     DECISION_COLUMN_SYMBOL,
@@ -146,10 +147,10 @@ class Node:
 
     @staticmethod
     def visualise(
-        data: dict | None = None,
+        data: dict[str, list[str]] | None = None,
         data_path: str = DATA_FILE_PATH,
         level: int = 0,
-        output: list = [],
+        output: list[str] = [],
     ) -> str | None:
         """
         Function building text decision tree visualisation.
@@ -184,7 +185,7 @@ class Node:
     @staticmethod
     def build_tree_struct(
         root: "Node | None" = None,
-        data: dict | None = None,
+        data: dict[str, list[str]] | None = None,
         data_path: str = DATA_FILE_PATH,
     ) -> "Node | None":
         """
@@ -205,7 +206,9 @@ class Node:
         if not data:
             data = read_data(data_path)
         attr, ratio = get_max_ratio_attr(data)
-        if abs(ratio) == 0:
+        if (
+            abs(ratio) == 0
+        ):  # may return tree consisting of one node if bad dataset is drawn
             root.label = (
                 f"DECISION: {tuple(sorted(set(data[DECISION_COLUMN_SYMBOL])))[0]}"
             )
@@ -245,6 +248,65 @@ class Node:
             return self.label
         if max_label[1] / float(sum(labels.values())) >= PRUNE_THRESHOLD:
             # print("PRUNEv1 ", self.id)
+            self.label = max_label[0]
+            self.children.clear()
+        return self.label
+
+    def test_subtree(self, data: dict[str, list[str]]) -> float:
+        """
+        Method testing subtree classification accuracy.
+
+        Parameters:
+            data (dict[str, list[str]]): dataset as dictionary
+
+        Returns:
+            accuracy (float): classification accuracy
+        """
+        data_by_row = [
+            get_data_row(data, i) for i in range(len(data[DECISION_COLUMN_SYMBOL]))
+        ]
+        result = 0
+        for row in data_by_row:
+            actual = row[DECISION_COLUMN_SYMBOL][0]
+            pred = self.predict(row)
+            this_node_val = (
+                self.label.split(" ")[1] if len(self.label.split(" ")) > 1 else "None"
+            )
+            if pred == actual or this_node_val == actual:
+                result += 1
+        return result / float(len(data_by_row))
+
+    def prunev2(self, v_dataset: dict[str, list[str]]) -> str:
+        """
+        Recursive method pruning decision tree with error calculation.
+
+        Returns:
+            node_label (str): node label
+        """
+        if not self.children or not self.parent_id:
+            return self.label
+        unique_vals = get_unique_values(v_dataset)[self.label]
+        split_data = split_dict(v_dataset, unique_vals, self.label)
+        children_labels = [
+            self.get_child_by_value(val).prunev2(split_data[val])  # type: ignore
+            for val in unique_vals
+            if self.get_child_by_value(val)
+        ]
+
+        labels = {
+            lab: children_labels.count(lab) for lab in sorted(set(children_labels))
+        }
+        max_label = get_max_key(labels)
+        subtree_error = 1 - self.test_subtree(v_dataset)
+        leaf_error = 1 - Node(label=max_label[0]).test_subtree(v_dataset)
+        test = leaf_error <= subtree_error + sqrt(
+            (subtree_error * (1 - subtree_error))
+            / float(len(v_dataset[DECISION_COLUMN_SYMBOL]))
+        )
+        if max_label[0] and "DECISION" not in max_label[0] or not max_label[0]:
+            return self.label
+        if test and self.parent_id:
+            print("PRUNEv1 ", self.id)
             self.label = max_label[0]
             self.children.clear()
         return self.label
@@ -324,6 +386,34 @@ class Node:
         test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
         Node.build_tree_struct(self, train_ds)
         self.prune()
+        return list(evaluate(self.test_tree(test_ds, dataset[DECISION_COLUMN_SYMBOL])))
+
+    def train_and_testv2(
+        self, dataset: dict[str, list[str]], ratio: float = TEST_DATA_RATIO
+    ) -> list[float]:
+        """
+        T&T method for testing decision tree classification with dataset split into
+        train dataset and test dataset with given ratio. This variant implements
+        tree pruning with error calculation.
+
+        Parameters:
+            dataset (dict[str, list[str]]): dataset as dict
+
+            ratio (float): ratio to split dataset by
+
+        Returns:
+            results (list[float]): accuracy, recall, precision of classification
+        """
+        dataset_len = len(dataset[DECISION_COLUMN_SYMBOL])
+        split_index = int(dataset_len * ratio)
+        train_ds = get_data_rows(dataset, stop=split_index)
+        test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
+        idx = int(len(train_ds[DECISION_COLUMN_SYMBOL]) * 0.1)
+        new_train_ds = get_data_rows(train_ds, 0, idx)
+        Node.build_tree_struct(self, new_train_ds)
+        v_dataset = get_data_rows(train_ds, idx, len(train_ds[DECISION_COLUMN_SYMBOL]))
+        Node.build_tree_struct(self, train_ds)
+        self.prunev2(v_dataset)
         return list(evaluate(self.test_tree(test_ds, dataset[DECISION_COLUMN_SYMBOL])))
 
     def cross_validation(self, dataset: dict[str, list[str]], k: int) -> list[float]:
