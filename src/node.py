@@ -15,6 +15,8 @@ from utils import (
     get_data_rows,
     get_data_row,
     split_dict,
+    merge_datasets,
+    evaluate,
 )
 
 
@@ -43,6 +45,15 @@ class Node:
         self.parent_id = parent_id
         self.children = [] if children is None else children
         self.__assign_parent()
+
+    def restore(self) -> None:
+        """
+        Method restoring node parameters to default.
+        """
+        self.label = "node"
+        self.children.clear()
+        self.val = "None"
+        self.parent_id = None
 
     def get_child_by_id(self, id: UUID) -> "Node | None":
         """
@@ -238,21 +249,6 @@ class Node:
             self.children.clear()
         return self.label
 
-    def test_subtree(self, data):
-        data_by_row = [
-            get_data_row(data, i) for i in range(len(data[DECISION_COLUMN_SYMBOL]))
-        ]
-        result = 0
-        for row in data_by_row:
-            actual = row[DECISION_COLUMN_SYMBOL][0]
-            pred = self.predict(row)
-            this_node_val = (
-                self.label.split(" ")[1] if len(self.label.split(" ")) > 1 else "None"
-            )
-            if pred == actual or this_node_val == actual:
-                result += 1
-        return result / float(len(data_by_row))
-
     def predict(self, data_row: dict[str, list[str]]) -> str | None:
         """
         Recursive function predicting decision with decision tree.
@@ -273,22 +269,25 @@ class Node:
         pred = next_step.predict(new_ds)
         return pred.split(" ")[1] if pred and "DECISION" in pred else pred
 
-    def train_and_test(
-        self, dataset: dict[str, list[str]], ratio: float = TEST_DATA_RATIO
+    def test_tree(
+        self, test_ds: dict[str, list[str]], d_classes: list[str]
     ) -> dict[str, list[int]]:
-        dataset_len = len(dataset[DECISION_COLUMN_SYMBOL])
-        split_index = int(dataset_len * ratio)
-        train_ds = get_data_rows(dataset, stop=split_index)
-        test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
-        Node.build_tree_struct(self, train_ds)
-        self.prune()
+        """
+        Method testing decision tree classification with testing dataset.
+
+        Parameters:
+            test_ds (dict[str, list[str]]): testing dataset
+
+            d_classes (list[str]): list of decision classes
+
+        Returns:
+            results (dict[str, list[int]]): TP, FP, FN, TN values for each class
+        """
         test_ds_by_row = [
             get_data_row(test_ds, i)
             for i in range(len(test_ds[DECISION_COLUMN_SYMBOL]))
         ]
-        results = {
-            dec: [0, 0, 0, 0] for dec in sorted(set(dataset[DECISION_COLUMN_SYMBOL]))
-        }
+        results = {dec: [0, 0, 0, 0] for dec in d_classes}
         for row in test_ds_by_row:
             actual = row[DECISION_COLUMN_SYMBOL][0]
             pred = self.predict(row)
@@ -303,6 +302,74 @@ class Node:
                     if class_ != pred and class_ != actual:
                         results[class_][3] += 1  # TN
         return results
+
+    def train_and_test(
+        self, dataset: dict[str, list[str]], ratio: float = TEST_DATA_RATIO
+    ) -> list[float]:
+        """
+        T&T method for testing decision tree classification with dataset split into
+        train dataset and test dataset with given ratio.
+
+        Parameters:
+            dataset (dict[str, list[str]]): dataset as dict
+
+            ratio (float): ratio to split dataset by
+
+        Returns:
+            results (list[float]): accuracy, recall, precision of classification
+        """
+        dataset_len = len(dataset[DECISION_COLUMN_SYMBOL])
+        split_index = int(dataset_len * ratio)
+        train_ds = get_data_rows(dataset, stop=split_index)
+        test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
+        Node.build_tree_struct(self, train_ds)
+        self.prune()
+        return list(evaluate(self.test_tree(test_ds, dataset[DECISION_COLUMN_SYMBOL])))
+
+    def cross_validation(self, dataset: dict[str, list[str]], k: int) -> list[float]:
+        """
+        Cross validation method for testing decision tree classification with dataset split into
+        k separate chunks, in each of k iterations one of chunks is testing dataset while rest
+        serve as single trainig dataset.
+
+        Parameters:
+            dataset (dict[str, list[str]]): dataset as dict
+
+            k (int): number of dataset chunks
+
+        Returns:
+            results (list[float]): average accuracy, recall, precision of classification
+        """
+
+        ds_len = len(dataset[DECISION_COLUMN_SYMBOL])
+        if k < 1:
+            raise Exception(f"k cannot be smaller than 1")
+        if k > ds_len:
+            raise Exception(
+                f"Cannot split dataset into k={k} parts. Dataset is too small."
+            )
+        chunk_size = ds_len // k
+        data_chunks = [
+            get_data_rows(
+                dataset, start=split * chunk_size, stop=(split + 1) * chunk_size
+            )
+            for split in range(k)
+        ]
+        results_list = []
+        for i, chunk in enumerate(data_chunks):
+            train_ds = merge_datasets(
+                [chunk for j, chunk in enumerate(data_chunks) if i != j]
+            )
+            Node.build_tree_struct(self, train_ds)
+            self.prune()
+            results_list.append(self.test_tree(chunk, dataset[DECISION_COLUMN_SYMBOL]))
+            self.restore()
+        eval_results = [evaluate(res) for res in results_list]
+        avg_results = [0.0, 0.0, 0.0]
+        for e_res in eval_results:
+            for i in range(len(avg_results)):
+                avg_results[i] += e_res[i]
+        return list(map(lambda el: round(el / float(k), 2), avg_results))
 
 
 if __name__ == "__main__":

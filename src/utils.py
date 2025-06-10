@@ -377,7 +377,7 @@ def get_data_row(data: dict[str, list[str]], index: int) -> dict[str, list[str]]
     return {key: value[index : index + 1] for key, value in data.items()}
 
 
-def evaluate(stats: dict[str, list[int]]) -> list[str]:
+def evaluate(stats: dict[str, list[int]]) -> list[float]:
     """
     Function calculating average classification quality metrics from test statistics.
 
@@ -385,7 +385,7 @@ def evaluate(stats: dict[str, list[int]]) -> list[str]:
         stats (dict[str, list[int]]): decision tree test statistics
 
     Returns:
-        metrics (list[str]): list of average classification metrics as strings
+        metrics (list[float]): list of average classification metrics as floats
     """
     accuracy_sum = 0
     recall_sum = 0
@@ -395,6 +395,23 @@ def evaluate(stats: dict[str, list[int]]) -> list[str]:
         recall_sum += res[0] / float(res[0] + res[2]) if res[0] + res[2] > 0 else 0
         precision_sum += res[0] / float(res[0] + res[1]) if res[0] + res[1] > 0 else 0
     return [
-        str(round(stat / float(len(stats.keys())) * 100, 2))
+        round(stat / float(len(stats.keys())) * 100, 2)
         for stat in (accuracy_sum, recall_sum, precision_sum)
     ]
+
+
+def merge_datasets(datasets: list[dict[str, list[str]]]) -> dict[str, list[str]]:
+    """
+    Function merging list of datasets into one.
+
+    Parameters:
+        datasets (list[dict[str, list[str]]]): list of dataset dictionaries
+
+    Returns:
+        new_ds (dict[str, list[str]]): merged datasets
+    """
+    new_ds = {attr: [] for attr in datasets[0].keys()}
+    for ds in datasets:
+        for attr in ds.keys():
+            new_ds[attr] = ds[attr]
+    return new_ds
