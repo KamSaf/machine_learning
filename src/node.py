@@ -233,7 +233,7 @@ class Node:
         if max_label[0] and "DECISION" not in max_label[0] or not max_label[0]:
             return self.label
         if max_label[1] / float(sum(labels.values())) >= PRUNE_THRESHOLD:
-            print("PRUNEv1 ", self.id)
+            # print("PRUNEv1 ", self.id)
             self.label = max_label[0]
             self.children.clear()
         return self.label

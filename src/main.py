@@ -5,7 +5,7 @@ from utils import read_data, randomize_data, evaluate, save_tree
 if __name__ == "__main__":
     # path = "../data/car.data"
     path = "../data/breast-cancer.data"
-    for i in range(10):
+    for i in range(100):
         randomize_data(path, "random_data.data")
         data = read_data("random_data.data")
         root = Node()
