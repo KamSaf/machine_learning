@@ -1,4 +1,3 @@
-from copy import deepcopy
 from uuid import uuid1, UUID
 from config import (
     DECISION_COLUMN_SYMBOL,
@@ -190,16 +189,16 @@ class Node:
         """
         if root is None:
             root = Node()
-        if root.label and "DECISION" in root.label:
-            return
+        if "DECISION" in root.label:
+            return root
         if not data:
             data = read_data(data_path)
         attr, ratio = get_max_ratio_attr(data)
-        if abs(ratio) == 0:
-            root.append_child(
-                Node(f"DECISION: {tuple(sorted(set(data[DECISION_COLUMN_SYMBOL])))[0]}")
+        if abs(ratio) == 0 or abs(ratio) < 0.05:
+            root.label = (
+                f"DECISION: {tuple(sorted(set(data[DECISION_COLUMN_SYMBOL])))[0]}"
             )
-            return
+            return root
         root.label = attr
         split_data = split_dict(data, get_unique_values(data)[attr], attr)
         for sd in split_data.values():
@@ -209,7 +208,7 @@ class Node:
             label = (
                 f"DECISION: {decision_column_values[0]}"
                 if len(decision_column_values) == 1
-                else "dupa"
+                else "node"
             )
             new_node = Node(label=label, val=f"{sd[attr][0]}", parent_id=root.id)
             root.append_child(new_node)
@@ -254,54 +253,6 @@ class Node:
                 result += 1
         return result / float(len(data_by_row))
 
-    def prunev2(self, v_dataset) -> str:
-        """
-        Recursive method pruning decision tree.
-
-        Returns:
-            node_label (str): node label
-        """
-        if not self.children:
-            return self.label
-        unique_vals = get_unique_values(v_dataset)[self.label]
-        split_data = split_dict(v_dataset, unique_vals, self.label)
-        children_labels = [
-            c.prunev2(
-                split_data[c.val],
-            )
-            for c in self.children
-            if c.val in split_data.keys()
-        ]
-
-        labels = {
-            lab: children_labels.count(lab) for lab in sorted(set(children_labels))
-        }
-        max_label = get_max_key(labels)
-
-        subtree = deepcopy(self)
-        subtree_result = round(subtree.test_subtree(v_dataset), 3)
-        subtree.label = max_label[0] if len(max_label[0]) > 0 else self.label
-        subtree.children.clear()
-        leaf_result = round(subtree.test_subtree(v_dataset), 3)
-        # print()
-        # print(subtree_result, leaf_result)
-        # print(len(max_label[0]) > 1)
-        # print("DECISION" in max_label[0])
-        # print(subtree_result <= leaf_result)
-        # print(max_label[1] / float(sum(labels.values())))
-        # print()
-        if (
-            len(max_label[0]) > 1
-            # and "DECISION" in max_label[0]
-            and subtree_result <= leaf_result
-            and self.val != "None"
-            # and round(max_label[1] / float(sum(labels.values())), 2) >= PRUNE_THRESHOLD
-        ):
-            print("PRUNEv2 ", self.id)
-            self.label = max_label[0]
-            self.children.clear()
-        return self.label
-
     def predict(self, data_row: dict[str, list[str]]) -> str | None:
         """
         Recursive function predicting decision with decision tree.
@@ -321,40 +272,6 @@ class Node:
         new_ds = data_row.copy()
         pred = next_step.predict(new_ds)
         return pred.split(" ")[1] if pred and "DECISION" in pred else pred
-
-    def train_and_testv2(
-        self, dataset: dict[str, list[str]], ratio: float = TEST_DATA_RATIO
-    ) -> dict[str, list[int]]:
-        dataset_len = len(dataset[DECISION_COLUMN_SYMBOL])
-        split_index = int(dataset_len * ratio)
-        train_ds = get_data_rows(dataset, stop=split_index)
-        test_ds = get_data_rows(dataset, start=split_index, stop=dataset_len)
-        idx = int(len(train_ds[DECISION_COLUMN_SYMBOL]) * 0.1)
-        new_train_ds = get_data_rows(train_ds, 0, idx)
-        Node.build_tree_struct(self, new_train_ds)
-        v_dataset = get_data_rows(train_ds, idx, len(train_ds[DECISION_COLUMN_SYMBOL]))
-        self.prunev2(v_dataset)
-        test_ds_by_row = [
-            get_data_row(test_ds, i)
-            for i in range(len(test_ds[DECISION_COLUMN_SYMBOL]))
-        ]
-        results = {
-            dec: [0, 0, 0, 0] for dec in sorted(set(dataset[DECISION_COLUMN_SYMBOL]))
-        }
-        for row in test_ds_by_row:
-            actual = row[DECISION_COLUMN_SYMBOL][0]
-            pred = self.predict(row)
-            for class_ in results.keys():
-                if class_ == actual and pred == class_:
-                    results[class_][0] += 1  # TP
-                elif actual != class_ and pred == class_:
-                    results[class_][1] += 1  # FP
-                elif actual == class_ and pred != class_:
-                    results[class_][2] += 1  # FN
-                elif actual != class_ and pred != class_:
-                    if class_ != pred and class_ != actual:
-                        results[class_][3] += 1  # TN
-        return results
 
     def train_and_test(
         self, dataset: dict[str, list[str]], ratio: float = TEST_DATA_RATIO
