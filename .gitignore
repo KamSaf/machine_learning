@@ -4,3 +4,4 @@ venv
 data/*
 __pycache__
 .DS_Store
+random_data.data
