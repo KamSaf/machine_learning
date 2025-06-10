@@ -73,7 +73,7 @@ def get_attr_names(data: dict[str, list[str]]) -> list[str]:
     return list(data.keys())
 
 
-def get_unique_values(data: dict[str, list[str]]) -> dict[str, set[str]]:
+def get_unique_values(data: dict[str, list[str]]) -> dict[str, list[str]]:
     """
     Function returning unique values of attributes.
 
@@ -83,7 +83,7 @@ def get_unique_values(data: dict[str, list[str]]) -> dict[str, set[str]]:
     Returns:
         unique_attr_vals (dict[str, set[str]]): key - attribute name, value - unique values found in column
     """
-    return {key: set(value) for key, value in data.items()}
+    return {key: sorted(set(value)) for key, value in data.items()}
 
 
 def get_unique_values_count(
@@ -107,7 +107,7 @@ def get_unique_values_count(
 
 
 def get_values_propabilities(
-    data: dict[str, list[str]], unique_values: dict[str, set[str]]
+    data: dict[str, list[str]], unique_values: dict[str, list[str]]
 ) -> dict[str, dict[str, float]]:
     """
     Function returning propabilities of every attribute value in columns.
@@ -391,9 +391,9 @@ def evaluate(stats: dict[str, list[int]]) -> list[str]:
     recall_sum = 0
     precision_sum = 0
     for _, res in stats.items():
-        accuracy_sum += (res[0] + res[3]) / float(sum(res))
-        recall_sum += res[0] / float(res[0] + res[2])
-        precision_sum += res[0] / float(res[0] + res[1])
+        accuracy_sum += (res[0] + res[3]) / float(sum(res)) if sum(res) > 0 else 0
+        recall_sum += res[0] / float(res[0] + res[2]) if res[0] + res[2] > 0 else 0
+        precision_sum += res[0] / float(res[0] + res[1]) if res[0] + res[1] > 0 else 0
     return [
         str(round(stat / float(len(stats.keys())) * 100, 2))
         for stat in (accuracy_sum, recall_sum, precision_sum)
