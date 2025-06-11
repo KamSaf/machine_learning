@@ -283,7 +283,7 @@ class Node:
         Returns:
             node_label (str): node label
         """
-        if not self.children or not self.parent_id:
+        if not self.children:
             return self.label
         unique_vals = get_unique_values(v_dataset)[self.label]
         split_data = split_dict(v_dataset, unique_vals, self.label)
@@ -306,7 +306,7 @@ class Node:
         if max_label[0] and "DECISION" not in max_label[0] or not max_label[0]:
             return self.label
         if test and self.parent_id:
-            print("PRUNEv1 ", self.id)
+            # print("PRUNEv2 ", self.id)
             self.label = max_label[0]
             self.children.clear()
         return self.label

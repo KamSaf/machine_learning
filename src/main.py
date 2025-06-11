@@ -13,8 +13,8 @@ if __name__ == "__main__":
     print(
         f"\nResults (T&T) {path.split('/')[-1]}:\nAccuracy: {results_tt[0]}%\nRecall: {results_tt[1]}%\nPrecision: {results_tt[2]}%"
     )
-    if results_tt[0] == 50.0:
-        save_tree(str(root))
+    # if results_tt[0] == 50.0:
+    save_tree(str(root))
     # root.restore()
     # results_cv = root.cross_validation(data, 4)
     # print(
